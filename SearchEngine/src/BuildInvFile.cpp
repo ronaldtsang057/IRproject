@@ -60,6 +60,7 @@ int main() {
 
 	InvFile.SaveDocRec("InvFile.doc");
 
+	InvFile.ReadTRECID("file.txt");
 	// Start interactive retrieval
 	InvFile.Retrieval();
 

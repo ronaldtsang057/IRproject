@@ -81,10 +81,11 @@ public:
 	void DocLen(DocRec File[]);	// Compute document lengths
 	void SaveDocRec(char * f);	// Save document record information
 	void LoadDocRec(char * f);	// Load document record information
-
+	void ReadTRECID(char * f);
 	// Retrieval
 	RetRec * result;					// Retrieval result set pointer
 	void PrintTop(RetRec * r, int N);			// Print the top N retrieved documents
+	void Normalize(RetRec * r, float qsize);
 	void CombineResult(RetRec * r, post * p, float idf);	// Combine the partial retrieval results
 	stemmer Stemming;					// Stemmer
 	char * GotoNextWord(char * s);				// Delimit the next query term

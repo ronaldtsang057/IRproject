@@ -411,10 +411,9 @@ void IInvFile::PrintTop(RetRec * r, int top) {
 	printf("Search Results:\r\n");
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
-		printf("[%d]\t%d\t%e\r\n",i+1, r[i].docid, r[i].sim);
+		printf("[%d]\t%d\t%s\t%f\r\n",i+1, r[i].docid, Files[r[i].docid].TRECID, r[i].sim);
 		i++;
 	}
-
 }
 
 // Perform retrieval
@@ -423,6 +422,7 @@ void IInvFile::Search(char * q) {
 	char * w;
 	bool next = true;
 	hnode * h;
+	float qsize = 0.0;// query size
 	// Initialize the result set
 	if (result != NULL) free(result);
 	result = (RetRec *) calloc(MaxDocid+1, sizeof(RetRec));
@@ -433,14 +433,50 @@ void IInvFile::Search(char * q) {
 		else { if (*s != '\0') *(s-1) = '\0';	// If not the last term, delimit the term
 			Stemming.Stem(w);		// Stem the term w
 			h = Find(w);			// Find it in the integrated inverted index
-			if (h != NULL)			// Add the scores to the result set
+			if (h != NULL){			// Add the scores to the result set
 				CombineResult(result, h->posting, GetIDF(h->df));
+				qsize += 1.0;
+			}
 			else if (strlen(w) > 0) printf("Query term does not exist <%s>\r\n",w);
 		}
 	} while (next == true);				// More query terms to handle?
-
+	Normalize(result, qsize);
 	PrintTop(result, 1000);				// Print top 10 retrieved results
 }
+
+void IInvFile::Normalize(RetRec * r, float qsize) {
+	float qlen = sqrt(qsize);
+	int docid;
+
+	for(int i =0; i <= MaxDocid; i++){
+		docid = r[i].docid;
+		r[i].sim = r[i].sim / Files[docid].len/ qlen;
+	}
+}
+
+void IInvFile::ReadTRECID(char * f) {
+	char line[10000];
+	char str[10000];
+	char TRECID[1000];
+	int docid;
+	int len;
+
+	FILE * fp = fopen(f, "rb");
+
+	if(fp == NULL){
+		printf("Error: no file <%s>", f);
+		return;
+	}
+
+	while (fgets(line, 10000, fp) != NULL){
+		sscanf(line, "%d %d %s %s", &docid, &len, &(str[0]), &(TRECID[0]));
+		Files[docid].TRECID = strdup(TRECID);
+	}
+	fclose(fp);
+
+}
+
+
 
 // Interactive retrieval
 void IInvFile::Retrieval() {
