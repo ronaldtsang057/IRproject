@@ -62,7 +62,7 @@ int main() {
 
 	InvFile.ReadTRECID("file.txt");
 	// Start interactive retrieval
-	InvFile.Retrieval();
+	InvFile.RetrievalTRECFormat();
 
 	return 0;
 }
