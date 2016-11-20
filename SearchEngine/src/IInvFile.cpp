@@ -411,18 +411,47 @@ void IInvFile::PrintTop(RetRec * r, int top) {
 	printf("Search Results:\r\n");
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
-		printf("[%d]\t%d\t%e\r\n",i+1, r[i].docid, r[i].sim);
+		printf("[%d]\t%d\t%s\t%f\r\n",i+1, r[i].docid, Files[r[i].docid].TRECID, r[i].sim);
 		i++;
 	}
+}
 
+// Print top N results
+void IInvFile::PrintTopTRECFormat(RetRec * r, int top, int queryNumber, char * identifier) {
+	int i = MaxDocid + 1;
+	qsort(r, MaxDocid+1, sizeof(RetRec), compare); // qsort is a C function: sort results
+	i=0;
+	while (i < top) {
+		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
+		printf("\t%d\t%s\t%d\t%f\t%s\r\n", queryNumber, Files[r[i].docid].TRECID, i+1, r[i].sim, identifier);
+		i++;
+	}
+}
+
+void IInvFile::PrintTopTRECFormatInTxt(RetRec * r, int top, int queryNumber, char * identifier) {
+	FILE * fp;
+	fp = fopen("TRECFormat.txt", "wb");
+
+	int i = MaxDocid + 1;
+	qsort(r, MaxDocid+1, sizeof(RetRec), compare); // qsort is a C function: sort results
+	i=0;
+	while (i < top) {
+		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
+		if (Files[i].TRECID != NULL){
+			fprintf(fp,"%d\t%s\t%d\t%f\t%s\r\n", queryNumber, Files[r[i].docid].TRECID, i+1, r[i].sim, identifier);
+			i++;
+		}
+	}
+	fclose(fp);
 }
 
 // Perform retrieval
-void IInvFile::Search(char * q) {
+void IInvFile::SearchTRECFormat(char * q, int queryNumber, char * identifier) {
 	char * s = q;
 	char * w;
 	bool next = true;
 	hnode * h;
+	float qsize = 0.0;// query size
 	// Initialize the result set
 	if (result != NULL) free(result);
 	result = (RetRec *) calloc(MaxDocid+1, sizeof(RetRec));
@@ -433,13 +462,107 @@ void IInvFile::Search(char * q) {
 		else { if (*s != '\0') *(s-1) = '\0';	// If not the last term, delimit the term
 			Stemming.Stem(w);		// Stem the term w
 			h = Find(w);			// Find it in the integrated inverted index
-			if (h != NULL)			// Add the scores to the result set
+			if (h != NULL){			// Add the scores to the result set
 				CombineResult(result, h->posting, GetIDF(h->df));
+				qsize += 1.0;
+			}
 			else if (strlen(w) > 0) printf("Query term does not exist <%s>\r\n",w);
 		}
 	} while (next == true);				// More query terms to handle?
 
+	Normalize(result, qsize);
+	PrintTopTRECFormat(result, 1000, queryNumber, identifier);				// Print top 1000 retrieved results
+}
+
+// Perform retrieval
+void IInvFile::Search(char * q) {
+	char * s = q;
+	char * w;
+	bool next = true;
+	hnode * h;
+	float qsize = 0.0;// query size
+	// Initialize the result set
+	if (result != NULL) free(result);
+	result = (RetRec *) calloc(MaxDocid+1, sizeof(RetRec));
+
+	do {	w = s;					// Do searching
+		s = GotoNextWord(s);			// Delimit the term
+		if (s == NULL) next = false;		// If no more terms, exit
+		else { if (*s != '\0') *(s-1) = '\0';	// If not the last term, delimit the term
+			Stemming.Stem(w);		// Stem the term w
+			h = Find(w);			// Find it in the integrated inverted index
+			if (h != NULL){			// Add the scores to the result set
+				CombineResult(result, h->posting, GetIDF(h->df));
+				qsize += 1.0;
+			}
+			else if (strlen(w) > 0) printf("Query term does not exist <%s>\r\n",w);
+		}
+	} while (next == true);				// More query terms to handle?
+	Normalize(result, qsize);
 	PrintTop(result, 1000);				// Print top 10 retrieved results
+}
+
+void IInvFile::Normalize(RetRec * r, float qsize) {
+	float qlen = sqrt(qsize);
+	int docid;
+
+	for(int i =0; i <= MaxDocid; i++){
+		docid = r[i].docid;
+		r[i].sim = r[i].sim / Files[docid].len/ qlen;
+	}
+}
+
+void IInvFile::ReadTRECID(char * f) {
+	char line[10000];
+	char str[10000];
+	char TRECID[1000];
+	int docid;
+	int len;
+
+	FILE * fp = fopen(f, "rb");
+
+	if(fp == NULL){
+		printf("Error: no file <%s>", f);
+		return;
+	}
+
+	while (fgets(line, 10000, fp) != NULL){
+		sscanf(line, "%d %d %s %s", &docid, &len, &(str[0]), &(TRECID[0]));
+		Files[docid].TRECID = strdup(TRECID);
+	}
+	fclose(fp);
+
+}
+
+// Interactive retrieval
+void IInvFile::RetrievalTRECFormat() {
+	char line[10000];
+	char str[10000];
+	int queryID;
+	FILE * fp = fopen("queryT", "rb");
+
+	if(fp == NULL){
+			printf("Error: no file <%s>", "queryT");
+			return;
+	}
+
+//	while (fgets(line, 10000, fp) != NULL){
+//		sscanf(line, "%d %s\n", &queryID, &(str[0]));
+//
+//	}
+
+	while (fgets(line, sizeof line, fp) != NULL) {
+	    int queryID = strtol(line, NULL, 0);
+
+	    const char *p = strchr(line, ' ');
+	    if (p != NULL) {
+	        char name[10000];
+	        strcpy(name, p + 1); // safe because strlen(p) <= sizeof(name)
+	        printf("%d\t%s\r\n", queryID, name);
+			SearchTRECFormat(name, queryID, "IR-01");
+	    }
+	}
+	fclose(fp);
 }
 
 // Interactive retrieval
@@ -454,3 +577,6 @@ void IInvFile::Retrieval() {
 	} while (next == true);
 
 }
+
+
+
