@@ -86,13 +86,13 @@ public:
 	RetRec * result;					// Retrieval result set pointer
 	void PrintTop(RetRec * r, int N);			// Print the top N retrieved documents
 	void PrintTopTRECFormat(RetRec * r, int N, int queryNumber, char * identifier);			// Print the top N retrieved documents in TREC format
-	void PrintTopTRECFormatInTxt(RetRec * r, int N, int queryNumber, char * identifier);
+	void PrintTopTRECFormatInTxt(RetRec * r, int N, int queryNumber, char * identifier,  FILE * fp);
 	void Normalize(RetRec * r, float qsize);
 	void CombineResult(RetRec * r, post * p, float idf);	// Combine the partial retrieval results
 	stemmer Stemming;					// Stemmer
 	char * GotoNextWord(char * s);				// Delimit the next query term
 	void Search(char * q);					// Search one query
-	void SearchTRECFormat(char * q, int queryNumber, char * identifier);					// Search TREC query
+	void SearchTRECFormat(char * q, int queryNumber, char * identifier, FILE * fp);					// Search TREC query
 	void Retrieval();					// Interactive retrieval
 	void RetrievalTRECFormat();
 };
