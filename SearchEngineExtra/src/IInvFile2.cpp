@@ -247,8 +247,9 @@ void IInvFile2::PrintTop(RetRec2 * r, int top) {
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0))
 			return; // no more results; so exit
-		printf("[%d]\t%d\t%s\t%f\r\n", i + 1, r[i].docid,
-				Files[r[i].docid].TRECID, r[i].sim);
+		//printf("[%d]\t%d\t%s\t%f\r\n", i + 1, r[i].docid,
+		//	Files[r[i].docid].TRECID, r[i].sim);
+		printf("[%d]\t%d\t%e\r\n", i + 1, r[i].docid, r[i].sim);
 		i++;
 	}
 }
@@ -270,28 +271,24 @@ void IInvFile2::PrintTopTRECFormat(RetRec2 * r, int top, int queryNumber,
 }
 
 void IInvFile2::PrintTopTRECFormatInTxt(RetRec2 * r, int top, int queryNumber,
-		char * identifier) {
-	FILE * fp;
-	fp = fopen("TRECFormat.txt", "wb");
+		char * identifier, FILE * fp) {
 
 	int i = MaxDocid + 1;
-	//qsort(r, MaxDocid + 1, sizeof(RetRec), compare); // qsort is a C function: sort results
 	qsort(r, MaxDocid + 1, sizeof(RetRec2), compare2); // qsort is a C function: sort results
 	i = 0;
+	int temp = 0;
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0))
 			return; // no more results; so exit
-		if (Files[i].TRECID != NULL) {
-			fprintf(fp, "%d\t%s\t%d\t%f\t%s\r\n", queryNumber,
-					Files[r[i].docid].TRECID, i + 1, r[i].sim, identifier);
-			i++;
-		}
+		fprintf(fp, "%d\t%d\t%s\t%d\t%f\t%s\n", queryNumber, temp,
+				Files[r[i].docid].TRECID, i, (r[i].sim * 100), identifier);
+		i++;
 	}
-	fclose(fp);
 }
 
 // Perform retrieval
-void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier) {
+void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
+		FILE * fp) {
 	char * s = q;
 	char * w;
 	bool next = true;
@@ -351,7 +348,7 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier) {
 	if (recordFound)
 		RecalSim(result, totalStem);
 
-	PrintTopTRECFormat(result, 1000, queryNumber, identifier);// Print top 1000 retrieved results
+	PrintTopTRECFormatInTxt(result, 1000, queryNumber, identifier, fp);	// Print top 1000 retrieved results
 }
 
 // Perform retrieval
@@ -420,7 +417,11 @@ void IInvFile2::Normalize(RetRec2 * r, float qsize) {
 
 	for (int i = 0; i <= MaxDocid; i++) {
 		docid = r[i].docid;
-		r[i].sim = r[i].sim / Files[docid].len / qlen;
+		if (qlen > 0.0 && Files[docid].len > 0.0) {
+			r[i].sim = r[i].sim / Files[docid].len / qlen;
+		} else {
+			r[i].sim = 0;
+		}
 	}
 }
 
