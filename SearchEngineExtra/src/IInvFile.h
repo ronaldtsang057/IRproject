@@ -73,8 +73,8 @@ public:
 	float GetIDF(int df);			// Compute the IDF value using df
 	post * Add(char * s, int docid, int f);	// Add a posting into the integrated inverted index
 	int CountDF(post * p);			// Obsolete (count df from posting list)
-	void Save(char * f);			// Save the integrated inverted index to the file f
-	void Load(char * f);			// Load the file data into the integrated inverted index
+	virtual void Save(char * f);			// Save the integrated inverted index to the file f
+	virtual void Load(char * f);			// Load the file data into the integrated inverted index
 
 	// Document length
 	void MakeDocRec();		// allocate document records
@@ -86,13 +86,13 @@ public:
 	RetRec * result;					// Retrieval result set pointer
 	void PrintTop(RetRec * r, int N);			// Print the top N retrieved documents
 	void PrintTopTRECFormat(RetRec * r, int N, int queryNumber, char * identifier);			// Print the top N retrieved documents in TREC format
-	void PrintTopTRECFormatInTxt(RetRec * r, int N, int queryNumber, char * identifier);
+	void PrintTopTRECFormatInTxt(RetRec * r, int N, int queryNumber, char * identifier,  FILE * fp);
 	void Normalize(RetRec * r, float qsize);
 	void CombineResult(RetRec * r, post * p, float idf);	// Combine the partial retrieval results
 	stemmer Stemming;					// Stemmer
 	char * GotoNextWord(char * s);				// Delimit the next query term
-	void Search(char * q);					// Search one query
-	void SearchTRECFormat(char * q, int queryNumber, char * identifier);					// Search TREC query
+	virtual void Search(char * q);					// Search one query
+	virtual void SearchTRECFormat(char * q, int queryNumber, char * identifier, FILE * fp);					// Search TREC query
 	void Retrieval();					// Interactive retrieval
 	void RetrievalTRECFormat();
 };

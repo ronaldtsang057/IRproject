@@ -23,15 +23,14 @@ public:
 	IInvFile2();
 	virtual ~IInvFile2();
 	post * Add(char * s, int docid, int freq, int loc);
-	void Save(char * f);
-	void Load(char * f);
+	void Save(char * f) override;
+	void Load(char * f) override;
 	void PrintTop(RetRec2 * r, int N);
 	void PrintTopTRECFormat(RetRec2 * r, int top, int queryNumber,
 			char * identifier);
-	void PrintTopTRECFormatInTxt(RetRec2 * r, int top, int queryNumber,
-			char * identifier);
-	void SearchTRECFormat(char * q, int queryNumber, char * identifier);
-	void Search(char * q);
+	void PrintTopTRECFormatInTxt(RetRec2 * r, int top, int queryNumber, char * identifier, FILE * fp);
+	void SearchTRECFormat(char * q, int queryNumber, char * identifier, FILE * fp) override;
+	void Search(char * q) override;
 	void CombineResult(RetRec2 * r, string stem, post * kk, float idf);
 	void Normalize(RetRec2 * r, float qsize);
 	void RecalSim(RetRec2 * r, int totalStem);

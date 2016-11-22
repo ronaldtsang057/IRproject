@@ -423,30 +423,26 @@ void IInvFile::PrintTopTRECFormat(RetRec * r, int top, int queryNumber, char * i
 	i=0;
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
-		printf("\t%d\t%s\t%d\t%f\t%s\r\n", queryNumber, Files[r[i].docid].TRECID, i+1, r[i].sim, identifier);
+		printf("%d\t%s\t%d\t%f\t%s\r\n", queryNumber, Files[r[i].docid].TRECID, i+1, (r[i].sim * 100), identifier);
 		i++;
 	}
 }
 
-void IInvFile::PrintTopTRECFormatInTxt(RetRec * r, int top, int queryNumber, char * identifier) {
-	FILE * fp;
-	fp = fopen("TRECFormat.txt", "wb");
+void IInvFile::PrintTopTRECFormatInTxt(RetRec * r, int top, int queryNumber, char * identifier, FILE * fp) {
 
 	int i = MaxDocid + 1;
 	qsort(r, MaxDocid+1, sizeof(RetRec), compare); // qsort is a C function: sort results
 	i=0;
+	int temp =0 ;
 	while (i < top) {
 		if ((r[i].docid == 0) && (r[i].sim == 0.0)) return; // no more results; so exit
-		if (Files[i].TRECID != NULL){
-			fprintf(fp,"%d\t%s\t%d\t%f\t%s\r\n", queryNumber, Files[r[i].docid].TRECID, i+1, r[i].sim, identifier);
+			fprintf(fp,"%d\t%d\t%s\t%d\t%f\t%s\n", queryNumber, temp, Files[r[i].docid].TRECID, i,  (r[i].sim * 100), identifier);
 			i++;
-		}
 	}
-	fclose(fp);
 }
 
 // Perform retrieval
-void IInvFile::SearchTRECFormat(char * q, int queryNumber, char * identifier) {
+void IInvFile::SearchTRECFormat(char * q, int queryNumber, char * identifier, FILE * fp) {
 	char * s = q;
 	char * w;
 	bool next = true;
@@ -471,7 +467,7 @@ void IInvFile::SearchTRECFormat(char * q, int queryNumber, char * identifier) {
 	} while (next == true);				// More query terms to handle?
 
 	Normalize(result, qsize);
-	PrintTopTRECFormat(result, 1000, queryNumber, identifier);				// Print top 1000 retrieved results
+	PrintTopTRECFormatInTxt(result, 1000, queryNumber, identifier, fp);				// Print top 1000 retrieved results
 }
 
 // Perform retrieval
@@ -508,7 +504,11 @@ void IInvFile::Normalize(RetRec * r, float qsize) {
 
 	for(int i =0; i <= MaxDocid; i++){
 		docid = r[i].docid;
-		r[i].sim = r[i].sim / Files[docid].len/ qlen;
+		if(qlen > 0.0 && Files[docid].len > 0.0){
+			r[i].sim = r[i].sim / Files[docid].len/ qlen;
+		}else{
+			r[i].sim = 0;
+		}
 	}
 }
 
@@ -550,7 +550,8 @@ void IInvFile::RetrievalTRECFormat() {
 //		sscanf(line, "%d %s\n", &queryID, &(str[0]));
 //
 //	}
-
+	FILE * fp1;
+	fp1 = fopen("TRECFormat.txt", "wb");
 	while (fgets(line, sizeof line, fp) != NULL) {
 	    int queryID = strtol(line, NULL, 0);
 
@@ -559,10 +560,11 @@ void IInvFile::RetrievalTRECFormat() {
 	        char name[10000];
 	        strcpy(name, p + 1); // safe because strlen(p) <= sizeof(name)
 	        printf("%d\t%s\r\n", queryID, name);
-			SearchTRECFormat(name, queryID, "IR-01");
+			SearchTRECFormat(name, queryID, "IR-01", fp1);
 	    }
 	}
 	fclose(fp);
+	fclose(fp1);
 }
 
 // Interactive retrieval
