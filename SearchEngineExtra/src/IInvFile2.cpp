@@ -323,7 +323,7 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
 			Stemming.Stem(w);		// Stem the term w
 			h = Find(w);			// Find it in the integrated inverted index
 			if (h != NULL) {			// Add the scores to the result set
-
+				totalStem++;
 				//my
 				stem = "";
 				t = w;
