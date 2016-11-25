@@ -295,11 +295,16 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
 	hnode * h;
 	float qsize = 0.0; // query size
 	// Initialize the result set
-	if (result != NULL)
+	if (result != NULL) {
+		int docid;
+		for (int i = 0; i < docList->size(); i++) {
+			delete result[(*docList)[i]].stemMap;
+		}
 		free(result);
+	}
 	//my start
 	if (docList != NULL)
-		free(docList);
+		delete docList;
 
 	//result = (RetRec *) calloc(MaxDocid+1, sizeof(RetRec));
 	result = (RetRec2 *) calloc(MaxDocid + 1, sizeof(RetRec2));
@@ -342,7 +347,7 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
 			Stemming.Stem(w);		// Stem the term w
 			h = Find(w);			// Find it in the integrated inverted index
 			if (h != NULL) {			// Add the scores to the result set
-
+				totalStem++;
 				totalStem++;
 				//my
 				stem = "";
@@ -379,10 +384,15 @@ void IInvFile2::Search(char * q) {
 	hnode * h;
 	float qsize = 0.0;				// query size
 	// Initialize the result set
-	if (result != NULL)
+	if (result != NULL) {
+		int docid;
+		for (int i = 0; i < docList->size(); i++) {
+			delete result[(*docList)[i]].stemMap;
+		}
 		free(result);
+	}
 	if (docList != NULL)
-		free(docList);
+		delete docList;
 
 	result = (RetRec2 *) calloc(MaxDocid + 1, sizeof(RetRec2));
 	docList = new vector<int>;

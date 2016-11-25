@@ -535,11 +535,11 @@ void IInvFile::ReadTRECID(char * f) {
 }
 
 // Interactive retrieval
-void IInvFile::RetrievalTRECFormat() {
+void IInvFile::RetrievalTRECFormat(char * inputName) {
 	char line[10000];
 	char str[10000];
 	int queryID;
-	FILE * fp = fopen("queryT", "rb");
+	FILE * fp = fopen(inputName, "rb");
 
 	if(fp == NULL){
 			printf("Error: no file <%s>", "queryT");
@@ -550,8 +550,13 @@ void IInvFile::RetrievalTRECFormat() {
 //		sscanf(line, "%d %s\n", &queryID, &(str[0]));
 //
 //	}
+	string temp ="";
+	temp += inputName;
+	temp += "_Result.txt";
+	char * s =  strdup(temp.c_str());
+
 	FILE * fp1;
-	fp1 = fopen("TRECFormat.txt", "wb");
+	fp1 = fopen(s, "wb");
 	while (fgets(line, sizeof line, fp) != NULL) {
 	    int queryID = strtol(line, NULL, 0);
 
@@ -559,7 +564,7 @@ void IInvFile::RetrievalTRECFormat() {
 	    if (p != NULL) {
 	        char name[10000];
 	        strcpy(name, p + 1); // safe because strlen(p) <= sizeof(name)
-	        printf("%d\t%s\r\n", queryID, name);
+	        printf("%d\r\n", queryID);
 			SearchTRECFormat(name, queryID, "IR-01", fp1);
 	    }
 	}
