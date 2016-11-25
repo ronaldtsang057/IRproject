@@ -62,6 +62,11 @@ int main() {
 //	InvFile.SaveDocRec("InvFile2.doc");
 
 	// Initialize the Hash Table
+
+	 /* delim does not include \' [\047] quote */
+
+	 //InvFile.freetree(root);
+
 	InvFile.MakeHashTable(13023973);
 
 	InvFile.allSeqFoundRate = 0.5;

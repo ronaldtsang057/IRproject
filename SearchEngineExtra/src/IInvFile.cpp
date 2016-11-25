@@ -539,7 +539,7 @@ void IInvFile::RetrievalTRECFormat() {
 	char line[10000];
 	char str[10000];
 	int queryID;
-	FILE * fp = fopen("queryT", "rb");
+	FILE * fp = fopen("queryTDN", "rb");
 
 	if(fp == NULL){
 			printf("Error: no file <%s>", "queryT");
@@ -551,7 +551,7 @@ void IInvFile::RetrievalTRECFormat() {
 //
 //	}
 	FILE * fp1;
-	fp1 = fopen("TRECFormat.txt", "wb");
+	fp1 = fopen("queryTDNResult.txt", "wb");
 	while (fgets(line, sizeof line, fp) != NULL) {
 	    int queryID = strtol(line, NULL, 0);
 

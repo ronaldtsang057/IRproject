@@ -313,6 +313,25 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
 	//my end
 
 	do {
+		std::string tempStr  = "";
+		char **tokens = NULL;
+		tokens = split(s, delim);
+
+		int i = 0;
+		for(i = 0; tokens[i] != NULL; i++) {
+		   querry = findstopword(root, tokens[i]);
+		   if(querry == NULL){
+			   tempStr += tokens[i];
+			   tempStr += " ";
+			   printf("%s ", tokens[i]);
+		   }
+		}
+
+		for(i = 0; tokens[i] != NULL; i++)
+			free(tokens[i]);
+		free(tokens[i]);
+
+		s = strdup(tempStr.c_str());
 		w = s;					// Do searching
 		s = GotoNextWord(s);			// Delimit the term
 		if (s == NULL)
@@ -324,6 +343,7 @@ void IInvFile2::SearchTRECFormat(char * q, int queryNumber, char * identifier,
 			h = Find(w);			// Find it in the integrated inverted index
 			if (h != NULL) {			// Add the scores to the result set
 
+				totalStem++;
 				//my
 				stem = "";
 				t = w;
@@ -502,10 +522,141 @@ bool IInvFile2::InRange(int key, int mid, vector<int> position, int range) {
 		return false;
 }
 
+
+
+
+char** IInvFile2::split(char *string, char *delim) {
+ char **tokens = NULL;
+ char *working = NULL;
+ char *token = NULL;
+ int idx = 0;
+
+ tokens  = (char **)malloc(sizeof(char *) * MAXTOKENS);
+ if(tokens == NULL)
+  return NULL;
+ working = (char *)malloc(sizeof(char) * strlen(string) + 1);
+ if(working == NULL)
+  return NULL;
+
+ /* to make sure, copy string to a safe place */
+ strcpy(working, string);
+ for(idx = 0; idx < MAXTOKENS; idx++)
+  tokens[idx] = NULL;
+
+ token = strtok(working, delim);
+ idx = 0;
+
+ /* always keep the last entry NULL terminated */
+ while((idx < (MAXTOKENS - 1)) && (token != NULL)) {
+  tokens[idx] = (char *)malloc(sizeof(char) * strlen(token) + 1);
+  if(tokens[idx] != NULL) {
+   strcpy(tokens[idx], token);
+   idx++;
+   token = strtok(NULL, delim);
+  }
+ }
+
+ free(working);
+ return tokens;
+}
+
+/* install word in binary tree */
+struct tnode * IInvFile2::addtree(struct tnode *p, char *w) {
+ int cond;
+
+ if(p == NULL) {
+  p = talloc();
+  p->word = strdup(w);
+  p->count = 1;
+  p->left = p->right = NULL;
+ } else if((cond = strcmp(w, p->word)) == 0)
+  p->count++;
+ else if(cond < 0)
+  p->left = addtree(p->left, w);
+ else
+  p->right = addtree(p->right, w);
+
+ return p;
+}
+
+/* read stoplist into binary tree, expects one entry per line */
+struct tnode * IInvFile2::buildstoptree(char *fname, struct tnode *p) {
+ FILE *fp = {0};
+ char line[MAXLINE];
+ int len = 0, lcount = 0;
+
+ fp = fopen(fname, "r");
+ if(fp == NULL) {
+  fprintf(stderr, "Error - fopen(%s)\n", fname);
+  return NULL;
+ }
+
+ while(fgets(line, MAXLINE, fp) != NULL) {
+  len = strlen(line);
+  if(len < STMINLEN)
+   continue;
+  else
+   lcount++;
+
+  if(line[len - 1] == '\n')
+   line[--len] = '\0';
+
+  p = addtree(p, line);
+ }
+
+ if(lcount == 0) {
+  fprintf(stderr, "Error - Zero stopwords..\n");
+  return NULL;
+ }
+
+ fclose(fp);
+ return p;
+}
+
+/* make new tnode */
+struct tnode * IInvFile2::talloc(void) {
+ return(struct tnode *)malloc(sizeof(struct tnode));
+}
+
+/* find value w in binary tree */
+struct tnode * IInvFile2::findstopword(struct tnode *p, char *w) {
+ struct tnode *temp;
+ int cond = 0;
+
+ temp = p;
+
+ while(temp != NULL) {
+  if((cond = strcmp(temp->word, w)) == 0)
+   return temp;
+  else if(cond > 0)
+   temp = temp->left;
+  else
+   temp = temp->right;
+ }
+
+ return NULL;
+}
+
+/* free binary tree */
+void IInvFile2::freetree(struct tnode *p) {
+ if(p != NULL) {
+  free(p->left);
+  free(p->right);
+
+  free(p->word);
+  free(p);
+ }
+}
+
+
 IInvFile2::IInvFile2() :
 		IInvFile() {
-	docList = NULL;
+		docList = NULL;
+		root = buildstoptree("stopwords_list", root);
 }
 IInvFile2::~IInvFile2() {
 
 }
+
+
+

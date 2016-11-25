@@ -18,6 +18,17 @@ typedef struct _RetRec2: RetRec {
 	map<string, vector<int> *> * stemMap;
 } RetRec2;
 
+#define MAXTOKENS       256
+#define MAXLINE         1024
+#define MINLEN          3
+#define STMINLEN        2
+
+struct tnode {
+ char *word;
+ int count;
+ struct tnode *left, *right;
+};
+
 class IInvFile2: public IInvFile {
 public:
 	IInvFile2();
@@ -38,6 +49,16 @@ public:
 	RetRec2 * result;
 	vector<int> * docList;
 	float allSeqFoundRate;
+
+	char *delim = ".,:;`\"+-_(){}[]<>*&^%$#@!?~/|\\= \t\r\n1234567890";
+	struct tnode *root = {0};
+	struct tnode *querry = {0};
+	struct tnode *buildstoptree(char *, struct tnode *);
+	struct tnode *addtree(struct tnode *, char *);
+	struct tnode *findstopword(struct tnode *, char *);
+	struct tnode *talloc(void);
+	void freetree(struct tnode *);
+	char **split(char *, char *);
 
 protected:
 	int BinSearch(int top, int bottom, int key, vector<int> position,
